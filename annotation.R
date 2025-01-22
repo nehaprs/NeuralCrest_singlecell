@@ -5,10 +5,12 @@ library(ggplot2)
 library(readxl)
 library(dplyr)
 
-s.query <- readRDS("~/BINF/yushi scrnaseq/E9.5/Sox9/seurat output/round1/sox9_resolution_0.4.rds")
-#s.query <- readRDS("~/BINF/yushi scrnaseq/E9.5/Sox9/Sox9_Seurat.rds")
-s.ref <- readRDS("~/BINF/yushi scrnaseq/E9.5/tomeE9.5.rds")
+#s.query <- readRDS("~/BINF/yushi scrnaseq/E9.5/Sox9/seurat output/round1/sox9_resolution_0.4.rds")
+#s.ref <- readRDS("~/BINF/yushi scrnaseq/E9.5/tomeE9.5.rds")
 
+setwd("~/BINF/yushi scrnaseq/E10.5/Pax3/ref_annot")
+s.query <- readRDS("~/BINF/yushi scrnaseq/E10.5/Pax3/seurat output/pax3.rds")
+s.ref <- readRDS("~/BINF/yushi scrnaseq/E10.5/tome_E10.5.rds")
 
 #function to process seurat object
 process = function(obj){
@@ -54,25 +56,26 @@ rownames(s.query) <- mapped_genes$ensembl_gene_id
 head(rownames(s.query))
 
 
-#integrate
-common_features <- intersect(rownames(s.ref), rownames(s.query))
-length(common_features)
-# Subset Seurat objects to shared features
-s.ref = subset(s.ref, features = common_features)
-s.query = subset(s.query, features = common_features)
+#integrate with default common features
+#common_features <- intersect(rownames(s.ref), rownames(s.query))
+#common_features <- intersect(VariableFeatures(s.ref), VariableFeatures(s.query))
 
-#Perform integration or transfer of labels
-library(future)
-plan("multicore", workers = 8)  # Adjust the number of workers as appropriate
-options(future.globals.maxSize =  50 * 1024^3)  # Increase memory limit for globals
+#length(common_features)
+# Subset Seurat objects to shared features
+#s.ref = subset(s.ref, features = common_features)
+#s.query = subset(s.query, features = common_features)
+'''
+any(duplicated(rownames(s.query)))
+duplicated_genes_query <- rownames(s.query)[duplicated(rownames(s.query))]
+s.query <- s.query[!is.na(rownames(s.query)), ]
+'''
 
 s.anchors <- FindTransferAnchors(
   reference = s.ref,
   query = s.query,
   dims = 1:10,
-  features = common_features
+  features = NULL
 )
-
 
 
 #s.anchors = FindTransferAnchors(reference = s.ref, query = s.query, dims = 1:15, features = common_features)
@@ -82,7 +85,7 @@ pedictions = TransferData(anchorset = s.anchors, refdata = s.ref$cell_type, dims
 
 s.query = AddMetaData(s.query, metadata = pedictions)
 #DimPlot(s2, group.by = "predicted.id", label = TRUE, label.size = 4)
-DimPlot(s.query, group.by = "predicted.id", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5) + NoLegend() + ggtitle("Sox9+ Cells at E9.5")
+DimPlot(s.query, group.by = "predicted.id", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5) + NoLegend() + ggtitle("Pax3+ Cells at E10.5")
 
 
 
@@ -112,9 +115,9 @@ new.cluster.ids = idnames
 
 names(new.cluster.ids) <- levels(s.query)          
 s.query <- RenameIdents(s.query, new.cluster.ids)
-DimPlot(s.query, reduction = "umap", label = TRUE, pt.size = 0.6,repel = TRUE) + NoLegend() + ggtitle("Sox9+ Cells at E9.5")
+DimPlot(s.query, reduction = "umap", label = TRUE, pt.size = 0.6,repel = TRUE) + NoLegend() + ggtitle("Pax3+ Cells at E10.5")
 
 
-setwd("~/BINF/yushi scrnaseq/E9.5/Sox9/ref_annot")
 
-saveRDS(s.query,"sox95.rds")
+saveRDS(s.query,"pax105.rds")
+[]
