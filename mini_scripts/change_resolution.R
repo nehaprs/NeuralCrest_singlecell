@@ -1,0 +1,6 @@
+library(Seurat)
+setwd("~/BINF/yushi scrnaseq/E9.5/Sox9/seurat output/round1")
+sox9_cc <- readRDS("~/BINF/yushi scrnaseq/E9.5/Sox9/seurat output/round1/sox9.rds")
+sox9_cc<- FindClusters(sox9_cc, resolution = 0.4)
+DimPlot(sox9_cc, reduction = "umap", label = TRUE, label.size = 5)
+saveRDS(sox9_cc, "sox9_resolution_0.4.rds")
