@@ -5,13 +5,15 @@ library(ggplot2)
 library(readxl)
 library(dplyr)
 
+#variable inputs
+
 #s.query <- readRDS("~/BINF/yushi scrnaseq/E9.5/Sox9/seurat output/round1/sox9_resolution_0.4.rds")
 #s.ref <- readRDS("~/BINF/yushi scrnaseq/E9.5/tomeE9.5.rds")
+setwd("~/BINF/yushi scrnaseq/E11.5/sox9/ref_annot")
+s.query <- readRDS("~/BINF/yushi scrnaseq/E11.5/sox9/seurat output/sox9.rds")
+s.ref <- readRDS("~/BINF/yushi scrnaseq/E11.5/tomeRef_E11.5.rds")
 
-setwd("~/BINF/yushi scrnaseq/E10.5/Pax3/ref_annot")
-s.query <- readRDS("~/BINF/yushi scrnaseq/E10.5/Pax3/seurat output/pax3.rds")
-s.ref <- readRDS("~/BINF/yushi scrnaseq/E10.5/tome_E10.5.rds")
-
+########
 #function to process seurat object
 process = function(obj){
   obj <- NormalizeData(obj)
@@ -64,11 +66,11 @@ head(rownames(s.query))
 # Subset Seurat objects to shared features
 #s.ref = subset(s.ref, features = common_features)
 #s.query = subset(s.query, features = common_features)
-'''
+
 any(duplicated(rownames(s.query)))
 duplicated_genes_query <- rownames(s.query)[duplicated(rownames(s.query))]
 s.query <- s.query[!is.na(rownames(s.query)), ]
-'''
+any(duplicated(rownames(s.query)))
 
 s.anchors <- FindTransferAnchors(
   reference = s.ref,
@@ -85,7 +87,7 @@ pedictions = TransferData(anchorset = s.anchors, refdata = s.ref$cell_type, dims
 
 s.query = AddMetaData(s.query, metadata = pedictions)
 #DimPlot(s2, group.by = "predicted.id", label = TRUE, label.size = 4)
-DimPlot(s.query, group.by = "predicted.id", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5) + NoLegend() + ggtitle("Pax3+ Cells at E10.5")
+DimPlot(s.query, group.by = "predicted.id", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5) + NoLegend() + ggtitle("Sox9+ Cells at E11.5")
 
 
 
@@ -96,7 +98,6 @@ DimPlot(s.query, group.by = "predicted.id", label = TRUE, repel = TRUE, label.si
 
 
 #######################
-#pax95 <- readRDS("C:/Users/neha/Documents/BINF/yushi scrnaseq/E9.5/Pax3/ref_annot/pax95.rds")
 
 
 Idents(s.query) <- "seurat_clusters"  # Set clusters as the identity
@@ -115,9 +116,8 @@ new.cluster.ids = idnames
 
 names(new.cluster.ids) <- levels(s.query)          
 s.query <- RenameIdents(s.query, new.cluster.ids)
-DimPlot(s.query, reduction = "umap", label = TRUE, pt.size = 0.6,repel = TRUE) + NoLegend() + ggtitle("Pax3+ Cells at E10.5")
+DimPlot(s.query, reduction = "umap", label = TRUE, pt.size = 0.6,repel = TRUE) + NoLegend() + ggtitle("Sox9+ Cells at E11.5")
 
 
 
-saveRDS(s.query,"pax105.rds")
-[]
+saveRDS(s.query,"sox115.rds")
