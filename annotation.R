@@ -6,13 +6,14 @@ library(readxl)
 library(dplyr)
 
 #variable inputs
-
+#setwd("~/BINF/yushi scrnaseq/E9.5/sox9/ref_annot")
 #s.query <- readRDS("~/BINF/yushi scrnaseq/E9.5/Sox9/seurat output/round1/sox9_resolution_0.4.rds")
-#s.ref <- readRDS("~/BINF/yushi scrnaseq/E9.5/tomeE9.5.rds")
-setwd("~/BINF/yushi scrnaseq/E11.5/sox9/ref_annot")
-s.query <- readRDS("~/BINF/yushi scrnaseq/E11.5/sox9/seurat output/sox9.rds")
-s.ref <- readRDS("~/BINF/yushi scrnaseq/E11.5/tomeRef_E11.5.rds")
+s.ref <- readRDS("~/BINF/yushi scrnaseq/E9.5/Pax3/ref_annot/reference9.5.rds")
+setwd("~/BINF/yushi scrnaseq/E9.5/Pax3/ref_annot")
+s.query <- readRDS("~/BINF/yushi scrnaseq/E9.5/Pax3/ref_annot/pax3E9.5_resolution_0.6.rds")
+#s.ref <- readRDS("~/BINF/yushi scrnaseq/E11.5/tomeRef_E11.5.rds")
 
+setwd("~/BINF/yushi scrnaseq/E9.5/Pax3/ref_annot/new")
 ########
 #function to process seurat object
 process = function(obj){
@@ -30,7 +31,7 @@ process = function(obj){
 s.ref = process(s.ref)
 
 #convert query feature names from gene symbol to ensembl
-
+#s.query = cc
 library(biomaRt)
 
 
@@ -40,7 +41,7 @@ ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl")
 
 # Extract the row names (gene symbols) from the Seurat object
 mouse_gene_symbols <- rownames(s.query)
-
+head(rownames(s.query))
 # Map mouse gene symbols to Ensembl IDs using biomaRt
 gene_mapping <- getBM(
   attributes = c("mgi_symbol", "ensembl_gene_id"),
@@ -78,6 +79,7 @@ s.anchors <- FindTransferAnchors(
   dims = 1:10,
   features = NULL
 )
+head(rownames(s.ref))
 
 
 #s.anchors = FindTransferAnchors(reference = s.ref, query = s.query, dims = 1:15, features = common_features)
@@ -87,7 +89,7 @@ pedictions = TransferData(anchorset = s.anchors, refdata = s.ref$cell_type, dims
 
 s.query = AddMetaData(s.query, metadata = pedictions)
 #DimPlot(s2, group.by = "predicted.id", label = TRUE, label.size = 4)
-DimPlot(s.query, group.by = "predicted.id", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5) + NoLegend() + ggtitle("Sox9+ Cells at E11.5")
+DimPlot(s.query, group.by = "predicted.id", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5) + NoLegend() + ggtitle("Pax3+ Cells at E9.5")
 
 
 
@@ -116,8 +118,8 @@ new.cluster.ids = idnames
 
 names(new.cluster.ids) <- levels(s.query)          
 s.query <- RenameIdents(s.query, new.cluster.ids)
-DimPlot(s.query, reduction = "umap", label = TRUE, pt.size = 0.6,repel = TRUE) + NoLegend() + ggtitle("Sox9+ Cells at E11.5")
+DimPlot(s.query, reduction = "umap", label = TRUE, pt.size = 0.6,repel = TRUE) + NoLegend() + ggtitle("Pax3+ Cells at E9.5")
 
 
 
-saveRDS(s.query,"sox115.rds")
+saveRDS(s.query,"pax95.rds")
