@@ -9,6 +9,7 @@ library(Seurat)
 library(patchwork)
 library(writexl)
 library(readxl)
+library(openxlsx)
 
 #s.data <- readRDS("~/BINF/yushi scrnaseq/E9.5/Sox9/ref_annot/sox95.rds")
 
@@ -40,3 +41,25 @@ confidence_summary = predicted_scores %>%
             Cell_Count = n())
 
 write_xlsx(as.data.frame(confidence_summary),"pax3e95_predscore.xlsx")
+
+#do this for all standalone rds objects
+input_dir = "~/BINF/yushi scrnaseq/New folder/rds objects"
+rds_files = list.files(path = input_dir, pattern = "rds$", full.names = TRUE)
+
+for(file in rds_files){
+  
+  file_name = tools::file_path_sans_ext(basename(file))
+  s.data = readRDS(file)
+  predicted_scores = s.data@meta.data[, c("predicted.id", "prediction.score.max")]
+  
+  
+  confidence_summary = predicted_scores %>%
+    group_by(predicted.id) %>%
+    summarize(Avg_Pred_Score = mean(prediction.score.max, na.rm = TRUE),
+              Median_Pred_score = median(prediction.score.max, na.rm = TRUE),
+              Cell_Count = n(),
+              .groups = "drop")
+  
+  output_file = paste0(file_name,"_predscore_cells.xlsx")
+  write_xlsx(as.data.frame(confidence_summary),output_file)
+}
