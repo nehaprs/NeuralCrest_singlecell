@@ -123,3 +123,5 @@ DimPlot(s.query, reduction = "umap", label = TRUE, pt.size = 0.6,repel = TRUE) +
 
 
 saveRDS(s.query,"pax95.rds")
+
+
