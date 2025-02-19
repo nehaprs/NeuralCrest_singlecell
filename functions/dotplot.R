@@ -15,7 +15,7 @@ s.data <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/sox115.rds")
 name = "sox115"
 table(s.data@active.ident)
 keep_clusters = c("Limb mesenchyme progenitors", "Neuron progenitor cells", "Inhibitory interneurons", "Neural crest (PNS glia)","Pre-epidermal keratinocytes","Primitive erythroid cells", "Epidermis")
-
+#these clusters are later made and saved in subclustering.R
 
 ##
 
