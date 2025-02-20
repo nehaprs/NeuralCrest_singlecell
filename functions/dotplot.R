@@ -1,26 +1,12 @@
 #plot NC markers for subcluster annotation
 setwd("~/BINF/yushi scrnaseq/New folder/genes_plots")
-
-#s.data <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/sox95.rds")
-#table(s.data@active.ident)
-#keep_clusters = c("Mesenchymal stromal cells", "Pre-epidermal keratinocytes", "Blood progenitors", "Neural crest (PNS neurons)", "Primitive erythroid cells")
-# Extract the name from the file path 
-#name = tools::file_path_sans_ext(basename("~/BINF/yushi scrnaseq/New folder/rds objects/sox95.rds"))
-
-
-setwd("~/BINF/yushi scrnaseq/New folder/genes_plots")
-
-#get s.data from makers_list.txt
-s.data <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/sox115.rds")
-name = "sox115"
-table(s.data@active.ident)
-keep_clusters = c("Limb mesenchyme progenitors", "Neuron progenitor cells", "Inhibitory interneurons", "Neural crest (PNS glia)","Pre-epidermal keratinocytes","Primitive erythroid cells", "Epidermis")
-#these clusters are later made and saved in subclustering.R
-
-##
-
-s.data2 = subset(s.data, idents = keep_clusters)
-
+library(dplyr)
+library(Seurat)
+library(ggplot2)
+library(Matrix)
+library(grid)
+s.data <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/subclusters/pax115.rds")
+name = "Pax115"
 
 marker_list = list(premigratory_NC = c("Zic1","Zic3", "Zic5",  "Msx1", "Mafb", "Gdf7", "Sox9",
                                        "Snai1"),
@@ -54,36 +40,37 @@ marker_list = list(premigratory_NC = c("Zic1","Zic3", "Zic5",  "Msx1", "Mafb", "
                    )
 
 
-# Loop over each group name in marker_list
+
 for(group in names(marker_list)) {
   # Extract the vector of genes for the current group
   genes <- marker_list[[group]]
   
-  # Here, you can use your DotPlot code. For example:
-  p <- DotPlot(s.data2, features = genes) +
-    ggtitle(paste(group, "markers for", name))
+  # Create custom y-axis labels with cluster names and cell counts
+  cluster_counts <- table(Idents(s.data))
+  new_labels <- paste0(names(cluster_counts), " (", cluster_counts, ")")
+  names(new_labels) <- names(cluster_counts)
   
-  # Construct a filename based on the group name and your RDS object's name
+  # Generate the DotPlot without modifying the Seurat object
+  p <- DotPlot(s.data, features = genes) +
+    scale_y_discrete(labels = new_labels) +
+    ggtitle(paste(group, "markers for", name))+
+    scale_x_discrete(drop = FALSE)
+  
+  # Force the x-axis factor to include all genes in the desired order.
+  # This sets the factor levels for the 'features.plot' column to 'genes'
+  p$data$features.plot <- factor(p$data$features.plot, levels = genes)
+  
+  # Adjust theme settings to reduce spacing between axis labels
+  p <- p + theme(
+    axis.text.x = element_text(size = 16, angle = 45, hjust = 1, vjust = 1, margin = margin(t = 0)),
+    axis.text.y = element_text(size = 16, margin = margin(r = 0)),
+    panel.spacing = unit(0.1, "lines"),
+    plot.margin = margin(5, 5, 5, 5),
+    text = element_text(size = 16),
+    aspect.ratio = 1/1
+  )
+  
+  # Construct a filename based on the group name and the object name, and save the plot
   file_name <- paste0(group, "_", name, ".png")
-  
-  # Save the plot with a white background
-  ggsave(filename = file_name, plot = p, width = 10, height = 8, dpi = 300, bg = "white")
+  ggsave(filename = file_name, plot = p, width = 10, height = 5, dpi = 300, bg = "white")
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
