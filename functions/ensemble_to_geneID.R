@@ -46,4 +46,15 @@ for(file in rds_files){
   cat("Processed and saved:", output_file, "\n")
 }
 
+#####################################################
 
+#process references
+setwd("~/BINF/yushi scrnaseq/New folder/rds objects/geneID")
+ref95 <- readRDS("~/BINF/yushi scrnaseq/E9.5/tomeE9.5.rds")
+ref105 <- readRDS("~/BINF/yushi scrnaseq/E10.5/tome_E10.5.rds")
+ref115 <- readRDS("~/BINF/yushi scrnaseq/E11.5/tomeRef_E11.5.rds")
+
+#change row names to gene id
+ref95 = ensemble_toId(ref95)
+head(rownames(ref95))
+#Renaming features in v3/v4 assays is not supported 
