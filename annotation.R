@@ -54,7 +54,11 @@ gene_mapping <- getBM(
   mart = ensembl
 )
 
-saveRDS(s.query,"soxFltd4bmx.rds")
+#saveRDS(s.query,"soxFltd4bmx.rds")
+setwd("~/BINF/yushi scrnaseq/time series/harmony_slingshot/soxAnnot")
+#readRDS("soxFltd4bmx.rds")
+
+
 # Match Ensembl IDs to the row names in the Seurat object
 # Filter out rows without mapping
 mapped_genes <- gene_mapping[match(mouse_gene_symbols, gene_mapping$mgi_symbol), ]
@@ -73,10 +77,12 @@ head(rownames(s.query))
 #s.ref = subset(s.ref, features = common_features)
 #s.query = subset(s.query, features = common_features)
 
+
 any(duplicated(rownames(s.query)))
 duplicated_genes_query <- rownames(s.query)[duplicated(rownames(s.query))]
 s.query <- s.query[!is.na(rownames(s.query)), ]
 any(duplicated(rownames(s.query)))
+
 
 head(rownames(s.ref))
 
@@ -152,7 +158,7 @@ ggplot(umap_coords, aes(umap_1, umap_2)) +
   theme(plot.margin = margin(5,5,5,5, "mm"))
 
 
-
+saveRDS(s.query, sox_SC_Combined.rds)
 
 #######################
 
