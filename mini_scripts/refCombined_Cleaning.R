@@ -2,21 +2,26 @@ library(Seurat)
 library(ggplot2)
 library(dplyr)
 library(ggrepel)
-refCombined <- readRDS("~/BINF/yushi scrnaseq/time series/harmony_slingshot/reference/refCombined.rds")
+#refCombined <- readRDS("~/BINF/yushi scrnaseq/time series/harmony_slingshot/reference/refCombined.rds")
+#s.Combined <- readRDS("~/BINF/yushi scrnaseq/time series/harmony_slingshot/soxfull/soxCombined.rds")
 
-tail(refCombined@meta.data$cell_state)
-DimPlot(refCombined, group.by = "cell_state", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5
+setwd("~/BINF/yushi scrnaseq/time series/harmony_slingshot/paxfull")
+s.Combined = readRDS("paxCombined.rds")
+s.Combined$cell_state = paste(s.Combined$eday, s.Combined$predicted.id,sep = ":")
+
+tail(s.Combined@meta.data$cell_state)
+DimPlot(s.Combined, group.by = "cell_state", label = TRUE, repel = TRUE, label.size = 4, pt.size = 1.5
         ) + NoLegend()
 
 #color by seurat_clusters and label by cell_state
 
 # Get UMAP embeddings
-umap_coords = Embeddings(refCombined, reduction = "umap") %>%
+umap_coords = Embeddings(s.Combined, reduction = "umap") %>%
   as.data.frame() %>%
   mutate(
     
-    ColorGroup = refCombined@meta.data$cell_type,
-    LabelGroup = refCombined@meta.data$cell_state
+    ColorGroup = s.Combined@meta.data$predicted.id,
+    LabelGroup = s.Combined@meta.data$cell_state
   )
 
 # Compute the median coordinates for labels
@@ -37,6 +42,7 @@ p
 
 #change identity to cell_type
 
-Idents(refCombined)
-Idents(refCombined) = "cell_type"
-saveRDS(refCombined, "refCombined_procesd.rds")
+Idents(s.Combined)
+Idents(s.Combined) = "cell_type"
+#setwd("~/BINF/yushi scrnaseq/time series/harmony_slingshot/soxfull")
+saveRDS(s.Combined, "paxFullCombined_procesd.rds")
