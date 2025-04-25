@@ -1,5 +1,6 @@
 #slingshot
 
+library(stringr)
 library(Seurat)
 library(ggplot2)
 library(dplyr)
@@ -11,7 +12,68 @@ s.processed = readRDS("paxFullCombined_procesd.rds")
 
 
 s.processed[["RNA"]] = JoinLayers(s.processed[["RNA"]])
+
+
+
+# Find root cells: E9.5 neural crest
+table(s.processed@meta.data$cell_state)
+root_cells = WhichCells(s.processed,
+                        expression = eday == "E9.5" & str_detect(s.processed@meta.data$predicted.id, regex("Neural crest", ignore_case = TRUE)))
+
+
+root_clusters = unique(s.processed$cell_state[root_cells])
+
+#sce object and slingshot
 sce = as.SingleCellExperiment(s.processed)
+
+colData(sce)$cluster = s.processed$cell_state
+
+
+
+
+
+
+
+#remove smaller clusters etc
+
+
+umap_emb <- reducedDim(sce, "UMAP")
+sum(is.na(umap_emb))
+sum(is.infinite(umap_emb))
+
+umap_emb = reducedDim(sce,"UMAP")
+sum(is.na(umap_emb)) #0
+sum(is.infinite(umap_emb)) #0
+#found none
+
+#check for none or inf in clusters
+
+table(is.na(sce$cluster))
+#FALSE
+
+
+
+#error might be because some starting clusters are too small
+
+cluster_sizes = table(sce$cluster)
+small_clusters = names(cluster_sizes[cluster_sizes < 3])
+small_clusters
+write.table(small_clusters,"small_clustersv2.txt")
+#remove small clusters
+valid_cells = !(sce$cluster %in% small_clusters) 
+sce = sce[, valid_cells]
+head(table(sce2$cluster))
+
+
+
+sce2 = slingshot(sce2,
+                clusterLabels = 'cluster',
+                reducedDim = "UMAP", 
+                start.clus = root_clusters,
+                allow.breaks = FALSE,
+                approx_points = 18717)
+lineages = slingLineages(sce)
+
 
 
 #set initial clusters: 
