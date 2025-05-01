@@ -13,6 +13,36 @@ s.processed = readRDS("paxFullCombined_procesd.rds")
 
 
 s.processed[["RNA"]] = JoinLayers(s.processed[["RNA"]])
+Idents(s.processed)= s.processed@meta.data$cell_state
+DimPlot(s.processed) +NoLegend()
+#pre-process and do partitions
+cds = as.cell_data_set(s.processed)
+#cds <- preprocess_cds(cds, num_dim = 30)
+#cds <- reduce_dimension(cds, reduction_method = "UMAP")
+cds <- cluster_cells(cds, reduction_method = "UMAP", k = 100)
+
+cds@clusters$UMAP$partitions
+
+#find partition with nc cells
+
+
+plot_cells(cds, color_cells_by = "partition", label_groups_by_cluster = TRUE)
+
+
+cds <- learn_graph(cds, use_partition = TRUE)
+cds <- order_cells(cds, root_cells = root_cells)
+plot_cells(
+  cds,
+  color_cells_by = "pseudotime",
+  label_groups_by_cluster = FALSE,
+  label_roots = FALSE,
+  label_branch_points = FALSE,
+  label_leaves  = FALSE,
+  label_cell_groups = FALSE
+)
+
+
+
 
 # Find root cells: E9.5 neural crest
 table(s.processed@meta.data$cell_state)
