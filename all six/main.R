@@ -8,12 +8,12 @@ library(writexl)
 library(readxl)
 library(clustree)
 
-setwd("~/BINF/yushi scrnaseq/all six")
+setwd("~/BINF/yushi scrnaseq/all six/e105")
 #load the surat objects
-sox95 <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/all clusters/sox95.rds")
-pax95 <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/all clusters/pax95.rds")
+sox105 <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/all clusters/sox105.rds")
+pax105 <- readRDS("~/BINF/yushi scrnaseq/New folder/rds objects/all clusters/pax105.rds")
 
-s.list = list(sox95, pax95)
+s.list = list(sox105, pax105)
 # normalize and identify variable features for each dataset independently
 s.list = lapply(X= s.list, 
                 FUN = function(x){
@@ -45,9 +45,9 @@ s.combined <- RunUMAP(s.combined, reduction = "pca", dims = 1:30)
 s.combined <- FindNeighbors(s.combined, reduction = "pca", dims = 1:30)
 s.combined <- FindClusters(s.combined, resolution = 0.5)
 
-p1 <- DimPlot(s.combined, reduction = "umap", group.by = "orig.ident")+ggtitle("Combined Dataset at E9.5 by Origin")
+p1 <- DimPlot(s.combined, reduction = "umap", group.by = "orig.ident")+ggtitle("Combined Dataset at E10.5 by Origin")
 p2 <- DimPlot(s.combined, reduction = "umap", group.by = "predicted.id", label = TRUE,
-              repel = TRUE, pt.size = 1) + NoLegend() +ggtitle("Combined Dataset at E9.5")
+              repel = TRUE, pt.size = 1) + NoLegend() +ggtitle("Combined Dataset at E10.5")
 
 ##find cells with minimus sox9 and pax3
 ##subcluster
@@ -56,7 +56,8 @@ head(rownames(s.combined))
 
 #find minimum sox9 and pax3 expressions
 sox9Cells = subset(s.combined, orig.ident == "sox9")
-sox9_expr = FetchData(sox9Cells, vars = "Sox9")
+sox9_expr = FetchData(sox9Cells, vars = "Sox9", assay = "RNA")
+any(sox9_expr < 0)
 # scatterplot  SOX9 expression
 sox9_expr$cell <- rownames(sox9_expr)
 sox9_expr$index <- seq_len(nrow(sox9_expr))
@@ -65,7 +66,7 @@ sox9_expr$index <- seq_len(nrow(sox9_expr))
 
 ggplot(sox9_expr, aes(x = index, y = Sox9)) +
   geom_point(alpha = 0.6, color = "darkgreen") +
-  labs(title = "Sox9 Expression in Cells with orig.ident == 'sox9'",
+  labs(title = "Sox9 Expression in Cells with orig.ident == 'sox9' at E10.5",
        x = "Cell Index",
        y = "Sox9 Expression (log-normalized)") +
   theme_minimal()
@@ -73,11 +74,14 @@ ggplot(sox9_expr, aes(x = index, y = Sox9)) +
 #find the smallest non-zero value
 non_zero_values <- sox9_expr$Sox9[sox9_expr$Sox9 > 0]
 min_non_zero <- min(non_zero_values)
-#min non-zero value = 0.211
+min(sox9_expr$Sox9)
+#min non-zero value at E9.5 = 0.211
+#E10.5 = 0.2557998
 
+unique(s.combined$orig.ident)
 
 pax3Cells = subset(s.combined, orig.ident == "pax3")
-pax_expr = FetchData(pax3Cells, vars ="Pax3")
+pax_expr = FetchData(pax3Cells, vars ="Pax3", assay = "RNA")
 # scatterplot expression
 pax_expr$cell = rownames(pax_expr)
 pax_expr$index = seq_len(nrow(pax_expr))
@@ -86,15 +90,16 @@ pax_expr$index = seq_len(nrow(pax_expr))
 
 ggplot(pax_expr, aes(x = index, y = Pax3)) +
   geom_point(alpha = 0.6, color = "darkblue") +
-  labs(title = "Pax3 Expression in Cells with orig.ident == 'pax9'",
+  labs(title = "Pax3 Expression in Cells with orig.ident == 'pax3' at E10.5",
        x = "Cell Index",
-       y = "PAx9 Expression (log-normalized)") +
+       y = "Pax3 Expression (log-normalized)") +
   theme_minimal()
 
 #find the smallest non-zero value
 
 non_zero_values = pax_expr$Pax3[pax_expr$Pax3 > 0]
 min_non_zero <- min(non_zero_values)
+min(pax_expr$Pax3)
 #2.979014e-05
 sort(non_zero_values)[1:10]
 #lowest 10 values: 2.979014e-05 1.359133e-04 1.137102e-03 1.458762e-03 1.460009e-03 2.597825e-03 2.891456e-03 3.048795e-03 3.064116e-03
@@ -169,3 +174,4 @@ p2 <- DimPlot(dbpos, reduction = "umap", group.by = "predicted.id", label = TRUE
               repel = TRUE, pt.size = 1) + NoLegend() +ggtitle("double positives at E9.5")
 
 DimPlot(dbpos, reduction = "umap")
+saveRDS(dbpos,"dbpos95.rds")
