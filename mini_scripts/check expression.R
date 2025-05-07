@@ -94,4 +94,6 @@ soxinpax = FetchData(s.combined, vars = "Sox9")
 min(soxinpax)
 #############################################################
 
+source("~/GitHub/NeuralCrest_singlecell/all six/plot_normalized_expression.R")
+
  
