@@ -32,19 +32,23 @@ process = function(obj){
   return(obj)
 }
 
-#s.ref = process(s.ref)
+s.ref = process(s.ref)
 
 #convert query feature names from gene symbol to ensembl
 #s.query = cc
 library(biomaRt)
 
+##frog
+source("~/GitHub/DorsalMigration/frog_nameconvert.R")
+s.ref = frog_nameconvert(s.ref)
 
-
+##mouse
 #Set up the biomaRt connection to the Ensembl database for mouse
 ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl")
-
+print("a")
 # Extract the row names (gene symbols) from the Seurat object
 mouse_gene_symbols <- rownames(s.query)
+
 head(rownames(s.query))
 # Map mouse gene symbols to Ensembl IDs using biomaRt
 gene_mapping <- getBM(
@@ -53,7 +57,7 @@ gene_mapping <- getBM(
   values = mouse_gene_symbols,
   mart = ensembl
 )
-
+print("a1")
 #saveRDS(s.query,"soxFltd4bmx.rds")
 setwd("~/BINF/yushi scrnaseq/time series/harmony_slingshot/soxAnnot")
 #readRDS("soxFltd4bmx.rds")
@@ -84,7 +88,7 @@ s.query <- s.query[!is.na(rownames(s.query)), ]
 any(duplicated(rownames(s.query)))
 
 
-head(rownames(s.ref))
+tail(rownames(s.ref))
 
 s.anchors <- FindTransferAnchors(
   reference = s.ref,
