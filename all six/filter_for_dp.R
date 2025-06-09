@@ -1,3 +1,7 @@
+#==========================================================================
+#filters for cells with double positives, ie, Sox9 and Pax3 expression > 0
+#===========================================================================
+
 library(Seurat)
 '
 add the following information in sproc:
@@ -20,6 +24,8 @@ filter_for_dp <- function(sproc, sraw) {
   
   # Subset: keep only cells where both genes have non-zero expression
   sproc <- subset(sproc, subset = raw_Sox9 > 0 & raw_Pax3 > 0)
+  
+  
   
   # Return the filtered Seurat object
   return(sproc)

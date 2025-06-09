@@ -4,14 +4,14 @@ library(biomaRt)
 
 
 ensemble_toId = function(s.data){
-ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl")
-
+#ensembl <- useEnsembl(biomart = "genes", dataset = "mmusculus_gene_ensembl")
+  ensembl <- useEnsembl(biomart = "genes", dataset = "xtropicalis_gene_ensembl")
 # Extract the row names from the Seurat object
 ensembl_ids <- rownames(s.data)
 
 # Map  Ensembl IDs to mouse gene symbols to  using biomaRt
 gene_mapping <- getBM(
-  attributes = c("ensembl_gene_id", "mgi_symbol"),
+  attributes = c("ensembl_gene_id", "external_gene_name"),
   filters = "ensembl_gene_id",
   values = ensembl_ids,
   mart = ensembl
