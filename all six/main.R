@@ -98,10 +98,12 @@ saveRDS(s.combined,"e105Combined.rds")
 
 #=====================================================
 #2. integrate across time points
+#uses harmony
+#edit: 6.16.2025:cell cycle regression
 #=====================================================
 
 #code similar to top portion of integration.R
-
+setwd("~/BINF/yushi scrnaseq/all six/threshold0/harmony/CCregressed_monocle")
 
 #load seurat objects
 e95Combined <- readRDS("~/BINF/yushi scrnaseq/all six/threshold0/e95/e95Combined.rds")
@@ -115,7 +117,25 @@ e115Combined$eday = "E11.5"
 allCombined = merge(e95Combined, y = list(e105Combined, e115Combined))
 DefaultAssay(allCombined) = "RNA"
 allCombined = NormalizeData(allCombined)
-allCombined <- ScaleData(allCombined, assay = "RNA", features = rownames(allCombined[["RNA"]]))
+allCombined = JoinLayers(allCombined)
+#cell cycle
+# A list of HUMAN cell cycle markers, from Tirosh et al, 2015, is loaded with Seurat.  
+s.genes <- cc.genes$s.genes
+g2m.genes <- cc.genes$g2m.genes
+source('~/GitHub/NeuralCrest_singlecell/functions/ConvertHumanGeneListtoMM.R')
+
+s.genes_mm = ConvertHumanGeneListToMM(s.genes)
+g2m.genes_mm = ConvertHumanGeneListToMM(g2m.genes)
+
+#calculate cell cycle phase score
+
+allCombined = CellCycleScoring(object = allCombined, s.features = s.genes_mm, g2m.features = g2m.genes_mm)
+allCombined$CC.Difference = allCombined$S.Score - allCombined$G2M.Score
+colnames(allCombined@meta.data)
+
+
+allCombined <- ScaleData(allCombined, assay = "RNA", vars.to.regress = c("nCount_RNA", "CC.Difference"), 
+                         features = rownames(allCombined[["RNA"]]))
 allCombined = FindVariableFeatures(allCombined, assay = "RNA")
 
 allCombined = RunPCA(allCombined, assay = "RNA")
@@ -125,13 +145,13 @@ allCombined = RunHarmony(allCombined, group.by.vars = "eday")
 allCombined = RunUMAP(allCombined, reduction = "harmony", dims = 1:20)
 allCombined <- FindNeighbors(allCombined, reduction = "harmony", dims = 1:20)
 names(allCombined@graphs)
-allCombined = JoinLayers(allCombined)
+
 allCombined = FindClusters(allCombined, resolution = 0.5) #change later
-setwd("~/BINF/yushi scrnaseq/all six/threshold0/all_trial")
+#setwd("~/BINF/yushi scrnaseq/all six/threshold0/all_trial")
 plot1 = DimPlot(allCombined, reduction = "umap", group.by = "eday")
 plot2 = DimPlot(allCombined, reduction = "umap", label = TRUE)
 markers = FindAllMarkers(allCombined, only.pos = TRUE)
-write_xlsx(markers, "markers_res.0.5v2.xlsx")
+write_xlsx(markers, "markers_res.0.5v.xlsx")
 saveRDS(allCombined,"allCombined.rds")
 
 ############
@@ -170,8 +190,8 @@ cluster.before.traj <-plot_cells(cds, color_cells_by = "cluster", label_groups_b
                                  group_label_size = 5) + theme(legend.position = "right")
 
 cds <- learn_graph(cds, use_partition = F)
-plot_cells(cds, color_cells_by = "cluster", label_groups_by_cluster = F,
-           label_branch_points = T, label_roots = T, label_leaves = F,
+plot_cells(cds, color_cells_by = "cluster", label_groups_by_cluster = T,
+           label_branch_points = F, label_roots = F, label_leaves = F,
            group_label_size = 5)
 
 
@@ -180,7 +200,7 @@ e95_root_cells = colnames(cds)[cds$eday == "E9.5"]
 #root_clusters = unique(allCombined$eday == "E9.5")
 cds <- order_cells(cds, reduction_method = "UMAP", root_cells = e95_root_cells)
 #plot_cells(cds, color_cells_by = "pseudotime", label_groups_by_cluster = T,
-           label_branch_points = T, label_roots = F, label_leaves = F)
+ #          label_branch_points = T, label_roots = F, label_leaves = F)
 
 
 
@@ -190,7 +210,11 @@ plot_cells(cds,
            label_leaves=FALSE,
            label_branch_points=FALSE,
            label_roots = FALSE) +
-  facet_wrap(~eday)
+  scale_color_gradientn(
+    colours = c("red", "green", "blue"),      # low → mid → high
+    values  = c(0, 0.5, 1),                   # positions (0=low, 0.5=mid, 1=high)
+    limits  = c(0, 1)
+  ) 
 
 ggplot(colData(cds), aes(x=pseudotime, fill=eday)) + 
   geom_density(alpha=0.5) +
