@@ -12,10 +12,11 @@ library(patchwork)
 library(writexl)
 library(readxl)
 library(clustree)
-
+library(monocle3)
 library(harmony)
 library(slingshot)
 library(SingleCellExperiment)
+library(SeuratWrappers)
 setwd("~/BINF/yushi scrnaseq/all six")
 
 
@@ -161,4 +162,54 @@ DimHeatmap(object = allCombined, reduction = "harmony", cells = 500, dims = 1:4)
 ###################
 #monocle
 
+
+##################
+#7.28.2025
+#monocle with 2 partition: Sox9 and PAx3
+#constrain the trajectory to follow the biological order
+##################
+
+allCombined <- readRDS("C:/Users/neha/Documents/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle/allcombined_with_harmony.rds")
+
+colnames(allCombined@meta.data)
+#no cell cycle scoring
+
+#create new cds 
+
+cds = as.cell_data_set(allCombined)
+
+cds <- preprocess_cds(cds, num_dim = 50) #default uses PCA
+cds <- reduce_dimension(cds)  # by default this uses UMAP
+cds <- cluster_cells(cds)     
+#cds <- learn_graph(cds, use_partition = TRUE)
+
+
+
+
+'
+#set partitions = orig.ident
+colData(cds)$orig.ident <- allCombined$orig.ident
+cds@clusters$UMAP$partitions <- factor(colData(cds)$orig.ident, levels = c("Sox9", "Pax3"))
+
+head(cds@clusters$UMAP$partitions)
+'
+
+
+
+
+head(colData(cds)$timepoint)
+colData(cds)$timepoint <- allCombined$timepoint
+#convert to ordered factors to timepoint = directional pseudotime
+colData(cds)$timepoint <- factor(colData(cds)$timepoint,
+                                 levels = c("E9.5", "E10.5", "E11.5"),
+                                 ordered = TRUE)
+
+
+cds <- learn_graph(cds, use_partition = FALSE)
+
+
+root_cells <- colnames(cds)[colData(cds)$timepoint == "E9.5"]
+
+# Order cells in pseudotime
+cds <- order_cells(cds, root_cells = root_cells)
 
