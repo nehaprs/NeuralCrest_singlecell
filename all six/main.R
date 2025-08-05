@@ -168,8 +168,27 @@ DimHeatmap(object = allCombined, reduction = "harmony", cells = 500, dims = 1:4)
 #monocle with 2 partition: Sox9 and PAx3
 #constrain the trajectory to follow the biological order
 ##################
-
+setwd("~/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle")
 allCombined <- readRDS("C:/Users/neha/Documents/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle/allcombined_with_harmony.rds")
+DimPlot(allCombined, group.by = "predicted.id")
+
+#find nc cells
+target_cells = WhichCells(allCombined, expression = predicted.id %in% 
+                            c("Neural crest (PNS glia)", "Neural Crest (PNS Neuron)"))
+# Add a new metadata column 'nc.cells', marking only the selected cells as TRUE
+allCombined$nc.cells = FALSE
+allCombined$nc.cells[target_cells] = TRUE
+length(target_cells) #there are 1767 nc cells
+ncol(allCombined) #there are 16157 cells in allCombined
+
+
+# Create logical vector for the root cells
+
+root.cells = allCombined$nc.cells == TRUE & allCombined$timepoint == "E9.5"
+allCombined$root.cells = root.cells
+sum(allCombined$root.cells == TRUE) #275 cells
+
+head(allCombined$nc.cells)
 
 colnames(allCombined@meta.data)
 #no cell cycle scoring
@@ -178,38 +197,69 @@ colnames(allCombined@meta.data)
 
 cds = as.cell_data_set(allCombined)
 
-cds <- preprocess_cds(cds, num_dim = 50) #default uses PCA
-cds <- reduce_dimension(cds)  # by default this uses UMAP
-cds <- cluster_cells(cds)     
-#cds <- learn_graph(cds, use_partition = TRUE)
+table(colData(cds)$root.cells) #275 root cells
 
-
-
-
-'
-#set partitions = orig.ident
-colData(cds)$orig.ident <- allCombined$orig.ident
-cds@clusters$UMAP$partitions <- factor(colData(cds)$orig.ident, levels = c("Sox9", "Pax3"))
-
-head(cds@clusters$UMAP$partitions)
-'
-
-
-
-
-head(colData(cds)$timepoint)
-colData(cds)$timepoint <- allCombined$timepoint
-#convert to ordered factors to timepoint = directional pseudotime
-colData(cds)$timepoint <- factor(colData(cds)$timepoint,
-                                 levels = c("E9.5", "E10.5", "E11.5"),
-                                 ordered = TRUE)
-
-
-cds <- learn_graph(cds, use_partition = FALSE)
-
-
-root_cells <- colnames(cds)[colData(cds)$timepoint == "E9.5"]
-
-# Order cells in pseudotime
+cds <- preprocess_cds(cds, num_dim = 50)
+cds <- reduce_dimension(cds, reduction_method = "UMAP")
+cds <- cluster_cells(cds)
+cds <- learn_graph(cds,use_partition = FALSE)
+root_cells <- rownames(subset(colData(cds), root.cells == TRUE))
 cds <- order_cells(cds, root_cells = root_cells)
+plot_cells(cds, color_cells_by = "pseudotime", show_trajectory_graph = TRUE, label_principal_points = FALSE
+      )
+plot_cells(cds, color_cells_by = "seurat_clusters", show_trajectory_graph = TRUE, label_principal_points = FALSE,
+           label_groups_by_cluster = FALSE, label_leaves = FALSE, label_branch_points = FALSE, label_roots = FALSE)
+pseudotime_df <- data.frame(cell_id = colnames(cds), celltype = cds$predicted.id,
+                            pseudotime = pseudotime(cds))
+
+table(cds$ident)
+
+
+#compute average pseudotime per cluster
+
+pseudotime_df <- data.frame(
+  cluster = colData(cds)$seurat_clusters,
+  pseudotime = pseudotime(cds)
+)
+
+avg_pt <- pseudotime_df %>%
+  group_by(cluster) %>%
+  summarize(mean_pseudotime = mean(pseudotime, na.rm = TRUE)) %>%
+  arrange(mean_pseudotime)
+
+
+
+type_eday_df <- data.frame(
+  cluster = colData(cds)$seurat_clusters,
+  pseudotime = cds$timepoint,
+  origin = cds$orig.ident
+)
+
+head(type_eday_df)
+
+# 
+cluster_summary <- df %>%
+  group_by(cluster) %>%
+  summarize(
+    most_common_pseudotime = names(sort(table(pseudotime), decreasing = TRUE))[1],
+    most_common_origin = names(sort(table(origin), decreasing = TRUE))[1]
+  ) %>%
+  ungroup()
+
+
+type_eday_summary = type_eday_df %>%
+  group_by(cluster) %>%
+  summarize(timepoint = names(sort(table(pseudotime), decreasing = TRUE))[1],
+            origin = names(sort(table(origin), decreasing = TRUE))[1]
+            )%>%
+  ungroup()
+  
+sort(table(type_eday_df$pseudotime), decreasing = TRUE)
+
+write_xlsx(avg_pt, "avg_pseudotime_clusters.xlsx")
+write_xlsx(type_eday_summary,"type_eday_cluster.xlsx")
+
+
+pr_graph_test_res <- principal_graph(cds)[["UMAP"]]
+
 
