@@ -168,7 +168,7 @@ DimHeatmap(object = allCombined, reduction = "harmony", cells = 500, dims = 1:4)
 #monocle with 2 partition: Sox9 and PAx3
 #constrain the trajectory to follow the biological order
 ##################
-setwd("~/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle")
+setwd("~/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle/choose_Roots")
 allCombined <- readRDS("C:/Users/neha/Documents/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle/allcombined_with_harmony.rds")
 DimPlot(allCombined, group.by = "predicted.id")
 
@@ -207,7 +207,7 @@ root_cells <- rownames(subset(colData(cds), root.cells == TRUE))
 cds <- order_cells(cds, root_cells = root_cells)
 plot_cells(cds, color_cells_by = "pseudotime", show_trajectory_graph = TRUE, label_principal_points = FALSE
       )
-plot_cells(cds, color_cells_by = "seurat_clusters", show_trajectory_graph = TRUE, label_principal_points = FALSE,
+plot_cells(cds, color_cells_by = "timepoint", show_trajectory_graph = TRUE, label_principal_points = FALSE,
            label_groups_by_cluster = FALSE, label_leaves = FALSE, label_branch_points = FALSE, label_roots = FALSE)
 pseudotime_df <- data.frame(cell_id = colnames(cds), celltype = cds$predicted.id,
                             pseudotime = pseudotime(cds))
@@ -258,7 +258,7 @@ sort(table(type_eday_df$pseudotime), decreasing = TRUE)
 
 write_xlsx(avg_pt, "avg_pseudotime_clusters.xlsx")
 write_xlsx(type_eday_summary,"type_eday_cluster.xlsx")
-
+saveRDS(cds, "cds.rds")
 
 pr_graph_test_res <- principal_graph(cds)[["UMAP"]]
 
