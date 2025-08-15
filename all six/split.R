@@ -82,6 +82,16 @@ table(Idents(s.combined))
 saveRDS(s.combined,"sox9Combined.rds")
 
 
+#########
+#changes here to try smaller clusters
+#########
+s.combined <- readRDS("~/BINF/yushi scrnaseq/all six/threshold0/split/sox9Combined.rds")
+
+s.combined$seurat_clusters = s.combined$RNA_snn_res.1.3
+table(Idents(s.combined))
+Idents(s.combined) = s.combined$RNA_snn_res.1.3
+table(Idents(s.combined))
+setwd("~/BINF/yushi scrnaseq/all six/threshold0/split/res1.3")
 ###################
 #monocle
 ##################
@@ -92,7 +102,7 @@ saveRDS(s.combined,"sox9Combined.rds")
 
 root.cells =  s.combined$timepoint == "E9.5" 
 s.combined$root.cells = root.cells
-sum(s.combined$root.cells == TRUE) #3232 E9.5 nc cells
+sum(s.combined$root.cells == TRUE) #3232 E9.5 nc cells at res 0.6
 
 cds = as.cell_data_set(s.combined)
 table(colData(cds)$root.cells) #3232 root cells
@@ -108,7 +118,9 @@ plot_cells(cds, color_cells_by = "pseudotime", show_trajectory_graph = TRUE, lab
 )
 
 
-plot_cells(cds, color_cells_by = "timepoint", show_trajectory_graph = TRUE, label_principal_points = FALSE,
+plot_cells(cds, color_cells_by = "timepoint", 
+           group_label_size = 4,
+           show_trajectory_graph = TRUE, label_principal_points = FALSE,
            label_groups_by_cluster = FALSE, label_leaves = FALSE, label_branch_points = FALSE, label_roots = FALSE)
 pseudotime_df <- data.frame(cell_id = colnames(cds), celltype = cds$predicted.id,
                             pseudotime = pseudotime(cds))
@@ -137,14 +149,6 @@ type_eday_df <- data.frame(
 
 head(type_eday_df)
 
-# 
-cluster_summary <- df %>%
-  group_by(cluster) %>%
-  summarize(
-    most_common_pseudotime = names(sort(table(pseudotime), decreasing = TRUE))[1],
-    most_common_origin = names(sort(table(origin), decreasing = TRUE))[1]
-  ) %>%
-  ungroup()
 
 
 type_eday_summary = type_eday_df %>%
@@ -159,3 +163,4 @@ sort(table(type_eday_df$pseudotime), decreasing = TRUE)
 write_xlsx(avg_pt, "avg_pseudotime_clusters.xlsx")
 write_xlsx(type_eday_summary,"type_eday_cluster.xlsx")
 saveRDS(cds, "cds.rds")
+
