@@ -3,6 +3,7 @@
 ######################
 
 library(dplyr)
+library(SeuratObject)
 library(Seurat)
 library(patchwork)
 library(writexl)
@@ -14,27 +15,27 @@ library(slingshot)
 library(SingleCellExperiment)
 library(SeuratWrappers)
 
-setwd("~/BINF/yushi scrnaseq/all six/threshold0/split")
+setwd("~/BINF/yushi scrnaseq/all six/threshold0/split/pax3/round2")
 
-s.obj <- readRDS("~/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle/allcombined_with_harmony.rds")
-
-#split into sox and pax cells
-
-sox9 = subset(s.obj, subset = orig.ident == "sox9")
-pax3 = subset(s.obj, subset = orig.ident == "pax3")
+  s.obj <- readRDS("~/BINF/yushi scrnaseq/all six/threshold0/harmony/monocle/allcombined_with_harmony.rds")
+  
+  #split into sox and pax cells
+  
+  sox9 = subset(s.obj, subset = orig.ident == "sox9")
+  pax3 = subset(s.obj, subset = orig.ident == "pax3")
 
 ####################
 # Run the standard workflow for visualization and clustering
-s.combined = sox9
+s.combined = pax3
 
 s.combined <- ScaleData(s.combined, verbose = FALSE)
 s.combined <- RunPCA(s.combined, npcs = 30, verbose = FALSE)
 elbow = ElbowPlot(s.combined) #16
-s.combined <- RunUMAP(s.combined, reduction = "pca", dims = 1:16)
-s.combined <- FindNeighbors(s.combined, reduction = "pca", dims = 1:16)
+s.combined <- RunUMAP(s.combined, reduction = "pca", dims = 1:13)
+s.combined <- FindNeighbors(s.combined, reduction = "pca", dims = 1:13)
 s.combined <- FindClusters(s.combined, resolution = 0.5)
 
-p1 <- DimPlot(s.combined, reduction = "umap", group.by = "seurat_clusters")+ggtitle("Combined Dataset all Sox9 Cells")
+p1 <- DimPlot(s.combined, reduction = "umap", group.by = "seurat_clusters")+ggtitle("Combined Dataset all Pax3 Cells")
 
 
 #use 
@@ -46,16 +47,16 @@ for (res in resolution.range) {
   s.combined<- FindClusters(s.combined, resolution = res)
   
   # Find all markers for the clusters at this resolution
-  s.combined.markers <- FindAllMarkers(s.combined, only.pos = TRUE)
+  #s.combined.markers <- FindAllMarkers(s.combined, only.pos = TRUE)
   
   # Define the file name for saving the markers
-  file_name <- paste0("markers_resolution_", res, ".xlsx")
+  #file_name <- paste0("markers_resolution_", res, ".xlsx")
   
   # Save the markers as an Excel file
-  write_xlsx(s.combined.markers, file_name)
+  #write_xlsx(s.combined.markers, file_name)
   
   # Print a message to confirm completion for each resolution
-  print(paste("Markers for resolution", res, "saved to", file_name))
+  #print(paste("Markers for resolution", res, "saved to", file_name))
 }
 
 
@@ -74,24 +75,24 @@ for (file in xlsx_file){
 s.combinedclust = clustree(s.combined)
 
 #number of cells in each cluster at desired res
-s.combined$seurat_clusters = s.combined$RNA_snn_res.0.6
+s.combined$seurat_clusters = s.combined$RNA_snn_res.0.9
 table(Idents(s.combined))
-Idents(s.combined) = s.combined$RNA_snn_res.0.6
+Idents(s.combined) = s.combined$RNA_snn_res.0.9
 table(Idents(s.combined))
 
-saveRDS(s.combined,"sox9Combined.rds")
+saveRDS(s.combined,"pax3Combined.rds")
 
 
 #########
 #changes here to try smaller clusters
 #########
-s.combined <- readRDS("~/BINF/yushi scrnaseq/all six/threshold0/split/sox9Combined.rds")
-
-s.combined$seurat_clusters = s.combined$RNA_snn_res.1.3
+s.combined <- readRDS("~/BINF/yushi scrnaseq/all six/threshold0/split/pax3/sox9Combined.rds")
+s.combined = readRDS("pax3/sox9Combined.rds")
+s.combined$seurat_clusters = s.combined$RNA_snn_res.0.9
 table(Idents(s.combined))
-Idents(s.combined) = s.combined$RNA_snn_res.1.3
+Idents(s.combined) = s.combined$RNA_snn_res.0.9
 table(Idents(s.combined))
-setwd("~/BINF/yushi scrnaseq/all six/threshold0/split/res1.3")
+#setwd("~/BINF/yushi scrnaseq/all six/threshold0/split/res1.3")
 ###################
 #monocle
 ##################
@@ -102,7 +103,8 @@ setwd("~/BINF/yushi scrnaseq/all six/threshold0/split/res1.3")
 
 root.cells =  s.combined$timepoint == "E9.5" 
 s.combined$root.cells = root.cells
-sum(s.combined$root.cells == TRUE) #3232 E9.5 nc cells at res 0.6
+sum(s.combined$root.cells == TRUE) #3232 E9.5 nc cells at res 0.6 
+#1424 roots: pax3 res 1.5
 
 cds = as.cell_data_set(s.combined)
 table(colData(cds)$root.cells) #3232 root cells
@@ -113,12 +115,16 @@ cds <- cluster_cells(cds)
 cds <- learn_graph(cds,use_partition = FALSE)
 root_cells <- rownames(subset(colData(cds), root.cells == TRUE))
 cds <- order_cells(cds, root_cells = root_cells)
-plot_cells(cds, color_cells_by = "pseudotime", show_trajectory_graph = TRUE, label_principal_points = FALSE,
+p1 = plot_cells(cds, color_cells_by = "pseudotime", show_trajectory_graph = TRUE, label_principal_points = FALSE,
            label_groups_by_cluster = FALSE, label_leaves = FALSE,  label_roots = FALSE
 )
 
+p2 = plot_cells(cds, color_cells_by = "seurat_clusters", 
+           group_label_size = 4,
+           show_trajectory_graph = TRUE, label_principal_points = FALSE,
+           label_groups_by_cluster = FALSE, label_leaves = FALSE, label_branch_points = FALSE, label_roots = FALSE)
 
-plot_cells(cds, color_cells_by = "timepoint", 
+p3 = plot_cells(cds, color_cells_by = "timepoint", 
            group_label_size = 4,
            show_trajectory_graph = TRUE, label_principal_points = FALSE,
            label_groups_by_cluster = FALSE, label_leaves = FALSE, label_branch_points = FALSE, label_roots = FALSE)
